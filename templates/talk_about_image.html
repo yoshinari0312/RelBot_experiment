@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hello</title>
+    <!-- JQueryの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+        integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+        crossorigin="anonymous">
+    </script>
+    <!-- SocketIOの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
+        integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
+        crossorigin="anonymous">
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        button {
+            width: 100px;  /* 幅を100ピクセルに設定 */
+            height: 50px;  /* 高さを50ピクセルに設定 */
+            font-size: 20px;  /* 文字の大きさを20ピクセルに設定 */
+            margin-right: 30px;
+        }
+        img {
+            width: 300px;
+            height: auto;
+            border: 1px solid #ccc;
+        }
+        #container {
+            display: flex;
+        }
+        #content {
+            flex: 1;
+            border-right: 1px solid #ccc; /* 必要に応じて、区切り線を追加 */
+        }
+        .RelationImages{
+            width: 30%;
+        }
+    </style>
+</head>
+
+<body>
+    <form>
+        <button id="startButton" type="button" onclick="startRecognition()" disabled>録音開始</button>
+    </form>
+
+    <audio id="beep" src="{{ url_for('static', filename='audio/startrecognition.mp3') }}" preload="auto"></audio>
+
+    <div id="container">
+        <div id="content" action="javascript:void(0)" style="margin-right: 20px;"></div>
+
+        <!-- 画像を関係に合わせて動的に表示 -->
+        <div class="RelationImages">
+            <p style="font-size: 20px; margin: 0;">テーマ画像</p>
+            <img id="theme_image" src={{image_src}} alt="Theme image">
+        </div>
+    </div>
+
+    <script type="text/javascript" charset="utf-8">
+        var recognitionInProgress = false;
+        var resultReceived = false;  // このフラグは音声認識の結果が得られたかどうかを追跡します
+        var cumulativeTranscript = ""; // 累積する文字列を保持する変数
+        var silenceDetector; // 沈黙を検出するタイマー
+        var human_comment_flag = false;
+        // 音声認識
+        var recognition = new webkitSpeechRecognition();
+        recognition.lang = 'ja-JP';
+        recognition.interimResults = false;
+        recognition.continuous = true; // 音声認識を連続的に行う
+
+        // socket io用
+        var socket = io();
+
+        // ページのロード/リロード時に実行される
+        $(document).ready(function() {
+            socket.emit('start_conversation');
+        });
+
+        function startRecognition() {
+            if (recognitionInProgress) {
+                console.log('Recognition is already in progress.');
+                return;
+            }
+            recognitionInProgress = true;
+            document.getElementById('startButton').disabled = true;  // ボタンを無効にする
+            // 累積文字列をリセット
+            cumulativeTranscript = "";
+            // 音を再生
+            document.getElementById('beep').play();
+            // 録音開始
+            recognition.start();
+            resultReceived = false; // 結果を受け取っていない状態にリセットします
+            human_comment_flag = false;
+        };
+
+        function endRecognition() {
+            // 音声認識を停止
+            recognition.stop();
+        };
+
+        // 音声認識の開始イベント
+        recognition.onstart = function() {
+            recognitionInProgress = true;
+            document.getElementById('startButton').disabled = true;  // ボタンを無効にする
+        };
+
+        recognition.onresult = function (e) {
+            // 現在の断片を累積文字列に追加
+            var currentTranscript = e.results[e.resultIndex][0].transcript;
+            if(currentTranscript){
+                cumulativeTranscript += currentTranscript + " "; // スペースを追加して区切る
+                resultReceived = true; // 音声認識の結果を受け取りました
+                // タイマーをクリア
+                clearTimeout(silenceDetector);
+                // 1.5秒後に累積された文字列を処理するタイマーを設定
+                silenceDetector = setTimeout(function() {
+                    // 音声認識を終了する
+                    endRecognition();
+                    if(!human_comment_flag){
+                        human_comment_flag = true;
+                        $('#content').append('<div>' + 'Human : ' + cumulativeTranscript + '</div>');
+                        console.log(cumulativeTranscript);
+                        // 音声認識結果送信用
+                        socket.emit('user_message', { data: cumulativeTranscript });
+                    }
+                    // 累積文字列をリセット
+                    cumulativeTranscript = "";
+                }, 1500);
+            }
+        }
+
+        recognition.onend = function() {
+            recognitionInProgress = false;
+            if (!resultReceived) {
+                document.getElementById('startButton').disabled = false;
+            }
+        }
+
+        socket.on('robot_conversation', function (msg) {
+            // 応答の表示
+            $('#content').append('<div>' + 'Robot : ' + msg.data + '</div>');
+            document.getElementById('startButton').disabled = false;
+            
+            // 自動的に録音を開始
+            startRecognition();
+        });
+    </script>
+</body>
+
+</html>
