@@ -18,7 +18,7 @@ app.config['SECRET_KEY'] = 'your-secret-key'
 socketio = SocketIO(app)
 
 # 早慶戦 or きのこの山派かたけのこの里派か or 都会に住みたいか田舎に住みたいか or 結婚の必要性 or 朝食の必要性
-topic = '朝食の必要性'
+topic = '早慶戦'
 
 # 会話履歴を保持するためのインスタンス生成
 history = Conversation()
