@@ -34,8 +34,6 @@ def chat1(topic):
                          "content": combined_content}
                          )
 
-    print(next_messages[0])  # systemを表示
-
     res = client.chat.completions.create(
         # model="gpt-3.5-turbo",
         # model="gpt-4",

@@ -46,8 +46,6 @@ def chat2(topic):
     combined_content = "\n".join(history.get())
     next_messages.append({"role": "user", "content": combined_content})
 
-    print(next_messages[0])
-
     res = client.chat.completions.create(
         # model="gpt-3.5-turbo",
         # model="gpt-4",
