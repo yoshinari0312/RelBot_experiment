@@ -20,11 +20,6 @@ class Relation:
     def set(self, relations_list):
         self.relation = relations_list
 
-    def set_future(self, relations_dict):
-        self.future_relation = relations_dict
-
     def get(self):
         return self.relation
 
-    def get_future(self):
-        return self.future_relation

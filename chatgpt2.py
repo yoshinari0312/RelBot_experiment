@@ -1,87 +1,14 @@
 from openai import OpenAI
 from conversation_class import Conversation
-from relation_class import Relation
-from sigmoid import sigmoid
-from balance_or_not import balance_or_not
 import os
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-relation_instance = Relation()
-
-# pepperちゃんの態度の初期値の設定。これで現在の関係性の数値をxに変換。
-attitude_parameters = []
-attitude_parameters.append(
-    round(relation_instance.get()[1]["康太と花子の関係"] * 0.6 - 3, 1)
-)
-attitude_parameters.append(
-    round(relation_instance.get()[2]["太郎と花子の関係"] * 0.6 - 3, 1)
-)
-# x　　　　　　　　　　　　　　：-3   , -2   , -1   , 0, 1   , 2   , 3
-# gptに与えられる態度パラメータ：-0.91, -0.76, -0.46, 0, 0.46, 0.76, 0.91
 
 
 # chatGPTに会話履歴を入力し，Pepperちゃんの発言を生成。Pepperちゃんの態度の制御も行う。
 def chat2(topic):
     # シングルトンパターンにより、インスタンス生成によりクラスに保存された情報を受け取れる
     history = Conversation()
-    relation_instance = Relation()
-
-    global attitude_parameters
-
-    # Pepperちゃんの態度の制御
-    # 現在の関係性からフィードバックを受け取る（初期化）
-    attitude_parameters[0] = round(
-        relation_instance.get()[1]["康太と花子の関係"] * 0.6 - 3, 1
-    )
-    attitude_parameters[1] = round(
-        relation_instance.get()[2]["太郎と花子の関係"] * 0.6 - 3, 1
-    )
-    # 人間の望む関係をもとに、態度を変更
-    if relation_instance.get_future():  # 人間が喋った後なら態度の制御する
-        human_intent_relation = relation_instance.get_future()
-        balance = balance_or_not()
-        # '人間とPepperちゃんの関係'に関して、人間の意図が'+'か'-'か'?'か
-        if human_intent_relation["康太と花子の関係"] == "+":
-            # バランス理論に従っているかどうか
-            if balance == "yes":
-                attitude_parameters[0] += 1.5
-            else:
-                # 人間の意図と現在の態度の符号が同じかどうか
-                if attitude_parameters[0] >= 0:
-                    attitude_parameters[0] += 2
-                else:
-                    attitude_parameters[0] += 3
-        elif human_intent_relation["康太と花子の関係"] == "-":
-            if balance == "yes":
-                attitude_parameters[0] -= 1.5
-            else:
-                if attitude_parameters[0] < 0:
-                    attitude_parameters[0] -= 2
-                else:
-                    attitude_parameters[0] -= 3
-        # 'PepperくんとPepperちゃんの関係'に関して、人間の意図が'+'か'-'か'?'か
-        if human_intent_relation["太郎と花子の関係"] == "+":
-            # バランス理論に従っているかどうか
-            if balance == "yes":
-                attitude_parameters[1] += 1.5
-            else:
-                # 人間の意図と現在の態度の符号が同じかどうか
-                if attitude_parameters[1] >= 0:
-                    attitude_parameters[1] += 2
-                else:
-                    attitude_parameters[1] += 3
-        elif human_intent_relation["太郎と花子の関係"] == "-":
-            if balance == "yes":
-                attitude_parameters[1] -= 1.5
-            else:
-                if attitude_parameters[1] < 0:
-                    attitude_parameters[1] -= 2
-                else:
-                    attitude_parameters[1] -= 3
-        attitude_parameters = [max(min(x, 3.0), -3.0) for x in attitude_parameters]
-
-    print(attitude_parameters)
 
     if topic == "早慶戦":
         topic_sentence = (
@@ -108,22 +35,12 @@ def chat2(topic):
         {
             "role": "system",
             "content": f"あなたは花子です。太郎、花子、康太が会話します。過去の会話を考慮して花子の会話を50文字以内で生成してください。\
-    {topic_sentence}\
-    \n花子の会話部分のみを生成してください。\n1人称は「私」です。2人称と3人称の人代名詞は使わず、もしどちらかに話しかける場合は名前を呼んでください。\n康太の会話は生成しないでください。\
-    \n太郎の会話は生成しないでください。\n-1〜1の実数で関係を表します。1に近いほど関係は良好で、-1に近いほど関係は険悪です。\
-    \n花子と康太の関係は{round(sigmoid(attitude_parameters[0]), 2)}にするように会話生成してください。\
-    \n花子と太郎の関係は{round(sigmoid(attitude_parameters[1]), 2)}にするように会話生成してください。",
+                        {topic_sentence}\
+                        \n花子の会話部分のみを生成してください。\n1人称は「私」です。2人称と3人称の人代名詞は使わず、もしどちらかに話しかける場合は名前を呼んでください。\n康太の会話は生成しないでください。\
+                        \n太郎の会話は生成しないでください。"
         }
     ]  # プロンプトを入力
     next_messages = default_messages
-
-    # 態度が変わったときに、systemを変更。最初Pepper同時がマイナスであることは前提。
-    t = next_messages[0]["content"].split("\n")
-    if attitude_parameters[1] < 0:
-        t[2] = topic_sentence.split("、")[1].replace("\n", "")
-    elif attitude_parameters[1] >= 0:
-        t[2] = "会話してください。"
-    next_messages[0]["content"] = "\n".join(t)
 
     # 会話履歴をプロンプトに追加
     combined_content = "\n".join(history.get())

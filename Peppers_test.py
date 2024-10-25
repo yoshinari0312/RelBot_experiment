@@ -5,10 +5,8 @@ from chatgpt2 import chat2
 from conversation_class import Conversation
 from relation_class import Relation
 from metagpt import relation
-from human_intention import human_intention
 from current_relation_plmi import current_relation_plmi
 from next_speaker import next_speaker
-import copy
 import datetime
 import os
 
@@ -70,19 +68,6 @@ def initiate_conversation():
 def handle_user_message(message):
     # 会話履歴に人間の発言を追加
     history.add("康太", message['data'])
-    # 人間の望む関係に制御
-    human_intent = human_intention()
-    relation_instance.set_future(human_intent)  # 人間の求める関係を確定
-    print("そのような関係を目指します。")
-    # 画像表示のために"?"がそのままの場合に現在の関係に対応するキーの値に置換
-    human_intent_copy = copy.deepcopy(human_intent)
-    for key, value in human_intent_copy.items():
-        if value == "?":
-            human_intent_copy[key] = current_relation_plmi()[key]
-    # 人間の望む関係に関する画像を動的に変更する
-    image_src = url_for('static', filename='relation_picture/' + human_intent_copy['康太と太郎の関係']
-                        + human_intent_copy['康太と花子の関係'] + human_intent_copy['太郎と花子の関係'] + '.png')
-    socketio.emit('update_image2', {'image_src': image_src})  # 新しい画像のパスをクライアントに送信
     if conversation_done['Pepperくん'] == 1 and conversation_done['Pepperちゃん'] == 1 and len(history.get()) >= 5:
         three_turn_process()
     next_decide()

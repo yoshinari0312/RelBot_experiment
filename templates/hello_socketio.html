@@ -61,10 +61,6 @@
                 <!-- 初期値に応じて画像が変更される -->
                 <img id="dynamicImage1" src={{image_src}} alt="Current Relation Image">
             </div>
-            <div class="RelationImage">
-                <p style="font-size: 20px; margin: 30px 0 0 0;">人間の望む関係</p>
-                <img id="dynamicImage2" src="{{ url_for('static', filename='relation_picture/default.png') }}" alt="Human Relation Image">
-            </div>
         </div>
     </div>
 
@@ -164,11 +160,6 @@
         socket.on('update_image1', function (msg) {
             // 新しい画像のパスを設定
             document.getElementById('dynamicImage1').src = msg.image_src;
-        });
-
-        socket.on('update_image2', function (msg) {
-            // 新しい画像のパスを設定
-            document.getElementById('dynamicImage2').src = msg.image_src;
         });
 
         socket.on('user_turn', function () {
