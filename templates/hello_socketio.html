@@ -129,8 +129,9 @@
                         cumulativeTranscript = cumulativeTranscript.replace('京王', '慶応');
                         $('#content').append('<div>' + '人間 : ' + cumulativeTranscript + '</div>');
                         console.log(cumulativeTranscript);
-                        cumulativeTranscript = cumulativeTranscript.replace(/人間/g, "康太").replace(/Pepperくん/g, "太郎").replace(/ペッパー君/g, "太郎")
-                                                .replace(/ペッパーくん/g, "太郎").replace(/Pepperちゃん/g, "花子").replace(/ペッパーちゃん/g, "花子")
+                        cumulativeTranscript = cumulativeTranscript.replace(/人間/g, "康太").replace(/ロボットA/g, "太郎")
+                                                .replace(/ロボット A/g, "太郎").replace(/ロボットB/g, "花子").replace(/ロボット B/g, "花子")
+                        console.log(cumulativeTranscript);
                         // 音声認識結果送信用
                         socket.emit('user_message', { data: cumulativeTranscript });
                     }
@@ -149,12 +150,12 @@
 
         socket.on('Pepper1', function (msg) {
             // 応答の表示
-            $('#content').append('<div>' + 'Pepperくん : ' + msg.data + '</div>');
+            $('#content').append('<div>' + 'ロボットA : ' + msg.data + '</div>');
         });
 
         socket.on('Pepper2', function (msg) {
             // 応答の表示
-            $('#content').append('<div>' + 'Pepperちゃん : ' + msg.data + '</div>');
+            $('#content').append('<div>' + 'ロボットB : ' + msg.data + '</div>');
         });
 
         socket.on('update_image1', function (msg) {

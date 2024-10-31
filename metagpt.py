@@ -1,9 +1,13 @@
-from openai import OpenAI
+from openai import OpenAI  # type: ignore
 import ast
 from conversation_class import Conversation
 from relation_class import Relation
 import re
 import os
+from dotenv import load_dotenv  # type: ignore
+
+# .envファイルの読み込み
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 

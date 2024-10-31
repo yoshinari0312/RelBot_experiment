@@ -22,4 +22,3 @@ class Relation:
 
     def get(self):
         return self.relation
-

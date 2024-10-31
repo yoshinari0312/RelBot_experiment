@@ -27,8 +27,8 @@ relation_instance = Relation()
 # 開いたs1やs2を入れる
 socket_list = []
 
-# PepperくんとPepperちゃんが話すと1にする
-conversation_done = {'Pepperくん': 0, 'Pepperちゃん': 0}
+# ロボットAとロボットBが話すと1にする
+conversation_done = {'ロボットA': 0, 'ロボットB': 0}
 
 # ログ用の変数
 num = 0
@@ -58,7 +58,7 @@ def capture_html():
     return '', 200
 
 
-# リロードした時にPepperくんから話すようにする
+# リロードした時にロボットAから話すようにする
 @socketio.on('start_conversation')
 def initiate_conversation():
     pepper1()
@@ -68,24 +68,24 @@ def initiate_conversation():
 def handle_user_message(message):
     # 会話履歴に人間の発言を追加
     history.add("康太", message['data'])
-    if conversation_done['Pepperくん'] == 1 and conversation_done['Pepperちゃん'] == 1 and len(history.get()) >= 5:
+    if conversation_done['ロボットA'] == 1 and conversation_done['ロボットB'] == 1 and len(history.get()) >= 5:
         three_turn_process()
     next_decide()
 
 
 def pepper1():
-    # Pepperくんの発言をgptで生成
+    # ロボットAの発言をgptで生成
     response1 = chat1(topic)
     if len(history.get()) == 0:
         response1 = topic + 'について話しましょう。' + response1
-    # 会話履歴にPepperくんの発言を追加
+    # 会話履歴にロボットAの発言を追加
     history.add("太郎", response1)
-    response1 = response1.replace("康太", "人間").replace("太郎", "Pepperくん").replace("花子", "Pepperちゃん")
+    response1 = response1.replace("康太", "人間").replace("太郎", "ロボットA").replace("花子", "ロボットB")
     # webに表示するために応答を送信
     socketio.emit('Pepper1', {'data': response1})
     if len(history.get()) >= 3:
-        conversation_done['Pepperくん'] = 1
-    if conversation_done['Pepperくん'] == 1 and conversation_done['Pepperちゃん'] == 1 and len(history.get()) >= 5:
+        conversation_done['ロボットA'] = 1
+    if conversation_done['ロボットA'] == 1 and conversation_done['ロボットB'] == 1 and len(history.get()) >= 5:
         three_turn_process()
     if len(history.get()) == 1:
         pepper2()
@@ -94,16 +94,16 @@ def pepper1():
 
 
 def pepper2():
-    # Pepperちゃんの発言をgptで生成
+    # ロボットBの発言をgptで生成
     response2 = chat2(topic)
-    # 会話履歴にPepperちゃんの発言を追加
+    # 会話履歴にロボットBの発言を追加
     history.add("花子", response2)
-    response2 = response2.replace("康太", "人間").replace("太郎", "Pepperくん").replace("花子", "Pepperちゃん")
+    response2 = response2.replace("康太", "人間").replace("太郎", "ロボットA").replace("花子", "ロボットB")
     # webに表示するために応答を送信
     socketio.emit('Pepper2', {'data': response2})
     if len(history.get()) >= 3:
-        conversation_done['Pepperちゃん'] = 1
-    if conversation_done['Pepperくん'] == 1 and conversation_done['Pepperちゃん'] == 1 and len(history.get()) >= 5:
+        conversation_done['ロボットB'] = 1
+    if conversation_done['ロボットA'] == 1 and conversation_done['ロボットB'] == 1 and len(history.get()) >= 5:
         three_turn_process()
     next_decide()
 
@@ -121,8 +121,8 @@ def next_decide():
 
 # 会話3回ごとに行う処理
 def three_turn_process():
-    conversation_done['Pepperくん'] = 0
-    conversation_done['Pepperちゃん'] = 0
+    conversation_done['ロボットA'] = 0
+    conversation_done['ロボットB'] = 0
     # 会話履歴をprint
     for h in history.get():
         print(h)

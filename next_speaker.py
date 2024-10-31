@@ -1,6 +1,10 @@
-from openai import OpenAI
+from openai import OpenAI  # type: ignore
 from conversation_class import Conversation
 import os
+from dotenv import load_dotenv  # type: ignore
+
+# .envファイルの読み込み
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 

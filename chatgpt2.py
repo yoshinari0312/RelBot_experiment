@@ -1,11 +1,15 @@
-from openai import OpenAI
+from openai import OpenAI  # type: ignore
 from conversation_class import Conversation
 import os
+from dotenv import load_dotenv  # type: ignore
+
+# .envファイルの読み込み
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-# chatGPTに会話履歴を入力し，Pepperちゃんの発言を生成。Pepperちゃんの態度の制御も行う。
+# chatGPTに会話履歴を入力し，ロボットBの発言を生成。
 def chat2(topic):
     # シングルトンパターンにより、インスタンス生成によりクラスに保存された情報を受け取れる
     history = Conversation()
@@ -70,4 +74,4 @@ def chat2(topic):
 if __name__ == "__main__":
     res = chat2()
     # print(next_messages)
-    print("Pepperちゃん: " + res)
+    print("ロボットB: " + res)

@@ -36,8 +36,8 @@ relation_instance = Relation()
 # 喋り終わったsocketオブジェクトを入れる
 socket_list = []
 
-# PepperくんとPepperちゃんが話すと1にする
-conversation_done = {"Pepperくん": 0, "Pepperちゃん": 0}
+# ロボットAとロボットBが話すと1にする
+conversation_done = {"ロボットA": 0, "ロボットB": 0}
 
 # ログ用の変数
 num = 0
@@ -73,7 +73,7 @@ def capture_html():
     return "", 200
 
 
-# リロードした時にPepperくんから話すようにする
+# リロードした時にロボットAから話すようにする
 @socketio.on("start_conversation")
 def initiate_conversation():
     pepper1()
@@ -85,8 +85,8 @@ def handle_user_message(message):
     history.add("康太", message["data"])
 
     if (
-        conversation_done["Pepperくん"] == 1
-        and conversation_done["Pepperちゃん"] == 1
+        conversation_done["ロボットA"] == 1
+        and conversation_done["ロボットB"] == 1
         and len(history.get()) >= 5
     ):
         three_turn_process()
@@ -94,33 +94,33 @@ def handle_user_message(message):
 
 
 def pepper1():
-    # Pepperくんのソケットを確認し、開いていれば閉じる
+    # ロボットAのソケットを確認し、開いていれば閉じる
     for s in socket_list:
         if s.getpeername()[0] == pepper_ip1:
             s.close()
             socket_list.remove(s)
-    # Pepperくんの発言をgptで生成
+    # ロボットAの発言をgptで生成
     response1 = chat1(topic)
     if len(history.get()) == 0:
         response1 = topic + "について話しましょう。" + response1
-    # 会話履歴にPepperくんの発言を追加
+    # 会話履歴にロボットAの発言を追加
     history.add("太郎", response1)
     response1 = (
         response1.replace("康太", "人間")
-        .replace("太郎", "Pepperくん")
-        .replace("花子", "Pepperちゃん")
+        .replace("太郎", "ロボットA")
+        .replace("花子", "ロボットB")
     )
     # webに表示するために応答を送信
     socketio.emit("Pepper1", {"data": response1})
-    # Pepperくんとソケット通信開始
+    # ロボットAとソケット通信開始
     s1 = send_message_to_pepper1(response1)
     if len(history.get()) >= 3:
-        conversation_done["Pepperくん"] = 1
+        conversation_done["ロボットA"] = 1
     if s1 not in socket_list:
         socket_list.append(s1)
     if (
-        conversation_done["Pepperくん"] == 1
-        and conversation_done["Pepperちゃん"] == 1
+        conversation_done["ロボットA"] == 1
+        and conversation_done["ロボットB"] == 1
         and len(history.get()) >= 5
     ):
         three_turn_process()
@@ -131,63 +131,63 @@ def pepper1():
 
 
 def pepper2():
-    # Pepperちゃんのソケットを確認し、開いていれば閉じる
+    # ロボットBのソケットを確認し、開いていれば閉じる
     for s in socket_list:
         if s.getpeername()[0] == pepper_ip2:
             s.close()
             socket_list.remove(s)
-    # Pepperちゃんの発言をgptで生成
+    # ロボットBの発言をgptで生成
     response2 = chat2(topic)
-    # 会話履歴にPepperちゃんの発言を追加
+    # 会話履歴にロボットBの発言を追加
     history.add("花子", response2)
     response2 = (
         response2.replace("康太", "人間")
-        .replace("太郎", "Pepperくん")
-        .replace("花子", "Pepperちゃん")
+        .replace("太郎", "ロボットA")
+        .replace("花子", "ロボットB")
     )
     # webに表示するために応答を送信
     socketio.emit("Pepper2", {"data": response2})
     s2 = send_message_to_pepper2(response2)
     if len(history.get()) >= 3:
-        conversation_done["Pepperちゃん"] = 1
+        conversation_done["ロボットB"] = 1
     if s2 not in socket_list:
         socket_list.append(s2)
     if (
-        conversation_done["Pepperくん"] == 1
-        and conversation_done["Pepperちゃん"] == 1
+        conversation_done["ロボットA"] == 1
+        and conversation_done["ロボットB"] == 1
         and len(history.get()) >= 5
     ):
         three_turn_process()
     next_decide()
 
 
-# response1はPepperくんの喋る内容
+# response1はロボットAの喋る内容
 def send_message_to_pepper1(response1):
-    # Pepperくんとソケット通信開始
+    # ロボットAとソケット通信開始
     s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s1.connect((pepper_ip1, pepper_port1))
     print("Connected to Pepper1!")
     response1 = "say:" + response1 + "\n"
     s1.sendall(response1.encode())
-    # Pepperくんから発言終わり信号を受け取る
+    # ロボットAから発言終わり信号を受け取る
     finished = s1.recv(1024).decode()
-    print("Pepperくん said:", finished)
-    if finished == "Finished speaking\n":  # Pepperくんが話し終わったという信号
+    print("ロボットA said:", finished)
+    if finished == "Finished speaking\n":  # ロボットAが話し終わったという信号
         return s1
 
 
-# response2はPepperちゃんの喋る内容
+# response2はロボットBの喋る内容
 def send_message_to_pepper2(response2):
-    # Pepperちゃんとソケット通信開始
+    # ロボットBとソケット通信開始
     s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s2.connect((pepper_ip2, pepper_port2))
     print("Connected to Pepper2!")
     response2 = "say:" + response2 + "\n"
     s2.sendall(response2.encode())
-    # Pepperちゃんから発言終わり信号を受け取る
+    # ロボットBから発言終わり信号を受け取る
     finished = s2.recv(1024).decode()
-    print("Pepperちゃん said:", finished)
-    if finished == "Finished speaking\n":  # Pepperちゃんが話し終わったという信号
+    print("ロボットB said:", finished)
+    if finished == "Finished speaking\n":  # ロボットBが話し終わったという信号
         return s2
 
 
@@ -206,8 +206,8 @@ def next_decide():
 # 会話3回ごとに行う処理
 def three_turn_process():
     try:
-        conversation_done["Pepperくん"] = 0
-        conversation_done["Pepperちゃん"] = 0
+        conversation_done["ロボットA"] = 0
+        conversation_done["ロボットB"] = 0
         # 会話履歴をprint
         for h in history.get():
             print(h)
@@ -220,7 +220,7 @@ def three_turn_process():
         current_relation = current_relation_plmi()
         # 現在の関係をjson形式に
         json_data = "look:" + json.dumps(current_relation) + "\n"
-        # PepperくんとPepperちゃん(またはどちらか)に視線用のデータ送信
+        # ロボットAとロボットB(またはどちらか)に視線用のデータ送信
         for s in socket_list:
             s.sendall(json_data.encode())
         # 現在の関係の画像を動的に変更する
